@@ -3,6 +3,12 @@
 # Change to the script's directory
 cd "$(dirname "$0")"
 
+# Check if curl is installed and install it if it's not
+if ! command -v curl &> /dev/null; then
+    echo "curl could not be found, installing curl..."
+    sudo apt-get update && sudo apt-get install -y curl
+fi
+
 # Check if Docker is installed and install it if it's not
 if ! command -v docker &> /dev/null; then
     echo "Docker could not be found, installing Docker..."
@@ -11,10 +17,18 @@ else
     echo "Docker is already installed."
 fi
 
+# Add the current user to the docker group if not already added
+if ! groups $USER | grep -q '\bdocker\b'; then
+    echo "Adding user to docker group..."
+    sudo usermod -aG docker $USER
+    echo "Please log out and log back in so that group changes take effect."
+    exit 1
+fi
+
 # Ensure the Docker service is started
-if ! systemctl is-active --quiet docker; then
+if ! sudo systemctl is-active --quiet docker; then
     echo "Starting Docker service..."
-    systemctl start docker
+    sudo systemctl start docker
 else
     echo "Docker service is already running."
 fi
@@ -28,33 +42,31 @@ else
     echo "Docker Compose is already installed."
 fi
 
+# Check if Python is installed and install it if it's not
+if ! command -v python3 &> /dev/null; then
+    echo "Python3 could not be found, installing Python3..."
+    sudo apt-get update && sudo apt-get install -y python3 python3-pip
+else
+    echo "Python3 is already installed."
+fi
 
-# Change to the script's directory
-cd "$(dirname "$0")"
+# Check if Flask is installed and install it if it's not
+if ! python3 -c 'import flask' &> /dev/null; then
+    echo "Flask could not be found, installing Flask..."
+    sudo pip3 install Flask
+else
+    echo "Flask is already installed."
+fi
 
-# # Build the kali-attacker image
-# echo "Building kali-attacker Docker image..."
-# docker build -t kali-attacker docker/attacks/
-
-# # Build the scapy-benign-traffic image
-# echo "Building scapy-benign-traffic/ Docker image..."
-# docker build -t scapy-benign-traffic docker/scapy-benign-traffic/
-
-
-docker build -t attacker:latest scripts/attacker/
-docker build -t user:latest scripts/user/
-docker build -t ftp_server:latest scripts/ftp_server/
-docker build -t ssh_server:latest scripts/ssh_server/
-docker build -t web_app:latest scripts/web_app/
-docker build -t firewall:latest scripts/firewall/
-
-# # Build the ostinato image
-# echo "Building ostinato-client Docker image..."
-# docker build -t ostinato-client docker/ostinato/
+# Build Docker images with sudo
+sudo docker build -t attacker:latest scripts/attacker/
+sudo docker build -t user:latest scripts/user/
+sudo docker build -t ftp_server:latest scripts/ftp_server/
+sudo docker build -t ssh_server:latest scripts/ssh_server/
+sudo docker build -t web_app:latest scripts/web_app/
+sudo docker build -t firewall:latest scripts/firewall/
 
 # Return to the original directory
 cd -
 
 echo "Setup completed!"
-
-
