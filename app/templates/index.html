@@ -1,0 +1,108 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Traffic Simulator</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Network Traffic Simulator</h1>
+        <div class="row">
+            <div class="col-md-8">
+                <form id="configForm">
+                    <div class="form-group">
+                        <label for="sophistication-level">Select Network Sophistication Level:</label>
+                        <select name="sophistication_level" id="sophistication-level" class="form-control">
+                            <option value="1">Level 1: Simple Network</option>
+                            <option value="2">Level 2: Network with Firewall</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="scenario">Select Scenario:</label>
+                        <select name="scenario_id" id="scenario" class="form-control">
+                            <!-- Scenarios will be dynamically loaded here -->
+                        </select>
+                    </div>
+                    <!-- <button type="submit" class="btn btn-primary">Configure Network</button> -->
+                </form>
+                <button id="startSimulation" class="btn btn-success mt-3">Start Simulation</button>
+                <button id="stopSimulation" class="btn btn-danger mt-3" style="display: none;">Stop Simulation</button>
+                <div id="message" class="mt-3"></div>
+            </div>
+            <div class="col-md-4">
+                <h4>Scenario Description</h4>
+                <p id="scenarioDescription"></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            function loadScenarios(level) {
+                $.get('/get_scenarios', {level: level}, function(scenarios) {
+                    $('#scenario').empty();
+                    scenarios.forEach(function(scenario) {
+                        $('#scenario').append($('<option>', {
+                            value: scenario.id,
+                            text: scenario.name,
+                            'data-description': scenario.description // Add description as data attribute
+                        }));
+                    });
+                    updateScenarioDescription();
+                });
+            }
+
+            function updateScenarioDescription() {
+                var scenarios = $('#scenario option');
+                var selectedScenario = scenarios.filter(':selected');
+                $('#scenarioDescription').text(selectedScenario.data('description'));
+            }
+
+            $('#sophistication-level').change(function() {
+                loadScenarios($(this).val());
+            });
+
+            $('#scenario').change(updateScenarioDescription);
+
+            loadScenarios($('#sophistication-level').val());
+
+            // $('#configForm').submit(function(e) {
+            //     e.preventDefault();
+            //     $.post('/configure_network', $(this).serialize(), function(response) {
+            //         $('#message').html('<div class="alert alert-success">' + response.message + '</div>');
+            //         $('#startSimulation').show();
+            //         $('#stopSimulation').hide();
+            //     }).fail(function(xhr) {
+            //         $('#message').html('<div class="alert alert-danger">' + xhr.responseJSON.error + '</div>');
+            //     });
+            // });
+
+            $('#startSimulation').click(function() {
+                var scenarioId = $('#scenario').val();
+                $.post('/start_simulation', {scenario_id: scenarioId}, function(response) {
+                    $('#message').html('<div class="alert alert-success">' + response.message + '</div>');
+                    $('#startSimulation').hide();
+                    // $('#stopSimulation').show();
+                }).fail(function(xhr) {
+                    $('#message').html('<div class="alert alert-danger">' + xhr.responseJSON.error + '</div>');
+                });
+            });
+
+            $('#stopSimulation').click(function() {
+                var scenarioId = $('#scenario').val();
+                $.post('/stop_simulation', {scenario_id: scenarioId}, function(response) {
+                    $('#message').html('<div class="alert alert-success">' + response.message + '</div>');
+                    $('#stopSimulation').hide();
+                    $('#startSimulation').show();
+                }).fail(function(xhr) {
+                    $('#message').html('<div class="alert alert-danger">' + xhr.responseJSON.error + '</div>');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

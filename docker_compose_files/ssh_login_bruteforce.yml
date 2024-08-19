@@ -1,0 +1,46 @@
+version: '3'
+services:
+  attacker:
+    image: attacker:latest
+    networks:
+      - simulation_network
+    volumes:
+      - ../scripts:/scripts
+      - ../traffic:/traffic
+    command: >
+      /bin/bash -c "
+      python3 /scripts/attacker/ssh_bruteforce.py;
+      sleep 5;
+      tcpdump -i any -w ../traffic/ssh_malicious.pcap;
+      tail -f /dev/null
+      "
+    depends_on:
+      - ssh_server
+
+  user:
+    image: user:latest
+    networks:
+      - simulation_network
+    volumes:
+      - ../scripts:/scripts
+      - ../traffic:/traffic
+    command: >
+      /bin/bash -c "
+      python3 /scripts/user/ssh_normal_usage.py;
+      sleep 5;
+      tcpdump -i any -w ../traffic/ssh_benign.pcap;
+      tail -f /dev/null
+      "
+    depends_on:
+      - ssh_server
+
+  ssh_server:
+    image: ftp_server:latest
+    networks:
+      - simulation_network
+    ports:
+      - "2222:22"
+
+networks:
+  simulation_network:
+    driver: bridge
