@@ -50,6 +50,12 @@ else
     echo "Python3 is already installed."
 fi
 
+# Check if pip3 is installed and install it if it's not
+if ! command -v pip3 &> /dev/null; then
+    echo "pip3 could not be found, installing pip3..."
+    sudo apt-get install -y python3-pip
+fi
+
 # Check if Flask is installed and install it if it's not
 if ! python3 -c 'import flask' &> /dev/null; then
     echo "Flask could not be found, installing Flask..."

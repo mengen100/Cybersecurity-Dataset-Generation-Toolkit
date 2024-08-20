@@ -11,11 +11,11 @@ def ssh_normal_usage(hostname, username, password):
         print(f"Connected to {hostname}")
 
         # Simulate normal SSH usage
-        commands = ["ls -l", "pwd", "date", "whoami", "uptime"]
-        for _ in range(5):
-            command = random.choice(commands)
-            stdin, stdout, stderr = client.exec_command(command)
-            print(f"Executed command: {command}")
+        commands = ["whoami", "pwd", "ls -l", "date", "uptime"]
+        for i in range(5):
+            # command = random.choice(commands)
+            stdin, stdout, stderr = client.exec_command(commands[i])
+            print(f"Executed command: {commands[i]}")
             print(stdout.read().decode())
             time.sleep(random.uniform(1, 3))
 
@@ -25,7 +25,7 @@ def ssh_normal_usage(hostname, username, password):
         print(f"Error: {str(e)}")
 
 if __name__ == "__main__":
-    hostname = "target_server"
+    hostname = "ssh_server"
     username = "root"
-    password = "password"  # The correct password
+    password = "simulation_default_pass" 
     ssh_normal_usage(hostname, username, password)
