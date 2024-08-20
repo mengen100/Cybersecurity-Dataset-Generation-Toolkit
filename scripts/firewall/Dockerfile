@@ -1,4 +1,2 @@
-FROM ubuntu:latest
-RUN apt-get update && apt-get install -y iptables
-COPY . /scripts
-CMD ["tail", "-f", "/dev/null"]
+FROM nginx:latest
+COPY nginx.conf /etc/nginx/nginx.conf

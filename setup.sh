@@ -69,7 +69,7 @@ sudo docker build -t attacker:latest scripts/attacker/
 sudo docker build -t user:latest scripts/user/
 sudo docker build -t ftp_server:latest scripts/ftp_server/
 sudo docker build -t ssh_server:latest scripts/ssh_server/
-sudo docker build -t web_app:latest scripts/web_app/
+sudo docker build -t web_server:latest scripts/web_server/
 sudo docker build -t firewall:latest scripts/firewall/
 
 # Return to the original directory

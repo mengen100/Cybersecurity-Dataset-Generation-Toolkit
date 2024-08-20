@@ -27,7 +27,7 @@ SCENARIOS = {
             "topology": {
                 "attacker": {"image": "attacker:latest", "ports": []},
                 "user": {"image": "user:latest", "ports": []},
-                "public_server": {"image": "ftp_server:latest", "ports": ["21:21"]}
+                "ftp_server": {"image": "ftp_server:latest", "ports": ["21:21"]}
             },
             "traffic": {
                 "benign": ["ftp_transfer"],
@@ -42,7 +42,7 @@ SCENARIOS = {
             "topology": {
                 "attacker": {"image": "attacker:latest", "ports": []},
                 "user": {"image": "user:latest", "ports": []},
-                "public_server": {"image": "ssh_server:latest", "ports": ["22:22"]}
+                "ssh_server": {"image": "ssh_server:latest", "ports": ["22:22"]}
             },
             "traffic": {
                 "benign": ["ssh_transfer"],

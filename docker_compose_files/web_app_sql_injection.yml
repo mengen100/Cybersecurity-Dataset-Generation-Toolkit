@@ -1,0 +1,62 @@
+version: '3'
+services:
+  attacker:
+    image: attacker:latest
+    networks:
+      - internet
+    volumes:
+      - ../scripts:/scripts
+      - ../traffic:/traffic
+    command: >
+      /bin/bash -c "
+      tcpdump -i any -w ../traffic/sqli_malicious.pcap & python3 /scripts/attacker/sql_injection.py;
+      tail -f /dev/null
+      "
+    depends_on:
+      - web_server
+
+  user:
+    image: user:latest
+    networks:
+      - internet
+    volumes:
+      - ../scripts:/scripts
+      - ../traffic:/traffic
+    command: >
+      /bin/bash -c "
+      tcpdump -i any -w ../traffic/normal_web_usage.pcap & python3 /scripts/user/normal_web_usage.py;
+      tail -f /dev/null
+      "
+    depends_on:
+    - web_server
+
+  firewall:
+    image: firewall:latest
+    networks:
+      - internet
+      - internal
+    ports:
+      - "8080:8080"
+
+  web_server:
+    image: web_server:latest
+    networks:
+      - internal
+    environment:
+      - DATABASE_URL=mysql://root:password@database/app_db
+
+  database:
+    image: mysql:5.7
+    networks:
+      - internal
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: app_db
+    volumes:
+      - ../scripts/web_server/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+networks:
+  internet:
+    driver: bridge
+  internal:
+    driver: bridge
