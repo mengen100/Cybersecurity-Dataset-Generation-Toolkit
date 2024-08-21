@@ -25,3 +25,7 @@ if __name__ == "__main__":
     username = "root"
     passwords = ["password123", "admin", "root", "123456", "password","securepassword","verysecurepassword"]  # Example password list
     ssh_bruteforce(hostname, username, passwords)
+
+    simulation_id = os.environ.get('SIMULATION_ID', 'unknown')
+    with open(f'/signals/attacker_done_{simulation_id}', 'w') as f:
+        f.write('done')

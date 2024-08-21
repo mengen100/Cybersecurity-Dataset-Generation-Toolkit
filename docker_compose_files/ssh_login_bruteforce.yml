@@ -7,13 +7,17 @@ services:
     volumes:
       - ../scripts:/scripts
       - ../traffic:/traffic
+      - ../signals:/signals
     command: >
       /bin/bash -c "
       tcpdump -i any -w ../traffic/ssh_malicious.pcap & python3 /scripts/attacker/ssh_bruteforce.py;
+      touch /signals/attacker_done_$${SIMULATION_ID};
       tail -f /dev/null
       "
     depends_on:
       - ssh_server
+    environment:
+      - SIMULATION_ID
 
   user:
     image: user:latest
@@ -22,13 +26,17 @@ services:
     volumes:
       - ../scripts:/scripts
       - ../traffic:/traffic
+      - ../signals:/signals
     command: >
       /bin/bash -c "
       tcpdump -i any -w ../traffic/ssh_benign.pcap & python3 /scripts/user/ssh_normal_usage.py;
+      touch /signals/user_done_$${SIMULATION_ID};
       tail -f /dev/null
       "
     depends_on:
       - ssh_server
+    environment:
+      - SIMULATION_ID
 
   ssh_server:
     image: ssh_server:latest

@@ -1,20 +1,22 @@
 import os
+import time
+import threading
+import uuid
 import subprocess
 from flask import render_template, request, jsonify
+from flask_socketio import SocketIO, emit
 from app import app
 import yaml
 
 
-current_script_path = os.path.dirname(os.path.abspath(__file__))
+socketio = SocketIO(app, cors_allowed_origins="*")
 
-NEW_TEST_PATH = os.path.join(current_script_path, '../new_test')
-
-VULHUB_BASE_PATH = os.path.join(current_script_path, '../docker/vulhub-master')
-SCAPY_BASE_PATH = os.path.join(current_script_path, '../docker/scapy-benign-traffic')
-DOCKER_COMPOSE_PATH = os.path.join(current_script_path, '../docker/vulhub-master/php/8.1-backdoor/docker-compose.yml')
+simulation_status = {}
+simulation_ids = {}
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DOCKER_COMPOSE_DIR = os.path.join(BASE_DIR, '../docker_compose_files')
+SIGNALS_DIR = os.path.join(BASE_DIR, '../signals')
 
 
 # Scenario definitions
@@ -32,7 +34,8 @@ SCENARIOS = {
             "traffic": {
                 "benign": ["ftp_transfer"],
                 "malicious": ["ftp_bruteforce"]
-            }
+            },
+            "yaml_file": "file_transfer_bruteforce.yml"
         },
 
         {
@@ -47,7 +50,8 @@ SCENARIOS = {
             "traffic": {
                 "benign": ["ssh_transfer"],
                 "malicious": ["ssh_bruteforce"]
-            }
+            },
+            "yaml_file": "ssh_login_bruteforce.yml"
         }
     ],
     2: [
@@ -65,7 +69,8 @@ SCENARIOS = {
             "traffic": {
                 "benign": ["web_browsing", "database_queries"],
                 "malicious": ["sql_injection"]
-            }
+            },
+            "yaml_file": "web_app_sql_injection.yml"
         }
     ]
     # Add more levels and scenarios as needed
@@ -83,255 +88,87 @@ def get_scenarios():
     level = int(request.args.get('level', 1))
     return jsonify(SCENARIOS.get(level, []))
 
+def clean_signal_files(SIGNALS_DIR):
+    for f in os.listdir(SIGNALS_DIR):
+        if f.startswith(('attacker_done_', 'user_done_')):  # Add other prefixes as needed
+            os.remove(os.path.join(SIGNALS_DIR, f))
 
-
-# @app.route('/configure_network', methods=['POST'])
-# def configure_network():
-#     level = int(request.form['sophistication_level'])
-#     scenario_id = request.form['scenario_id']
+def check_simulation_complete(scenario_id, file_path, simulation_id):
     
-#     scenario = next((s for s in SCENARIOS[level] if s['id'] == scenario_id), None)
-#     if not scenario:
-#         return jsonify({"error": "Invalid scenario"}), 400
-
-#     docker_compose = generate_docker_compose(scenario)
+    expected_signals = ['attacker_done', 'user_done']  # Add more as needed
+    timeout = 600  # 10 minutes timeout, adjust as needed
+    start_time = time.time()
     
-#     file_path = os.path.join(DOCKER_COMPOSE_DIR, f"{scenario_id}.yml")
-#     with open(file_path, 'w') as f:
-#         f.write(docker_compose)
+    while time.time() - start_time < timeout:
+        completed_signals = [f for f in expected_signals if os.path.exists(os.path.join(SIGNALS_DIR, f"{f}_{simulation_id}"))]
+        if len(completed_signals) == len(expected_signals):
+            return True
+        time.sleep(5)  # Check every 5 seconds
+    
+    return False
 
-#     traffic_dir = os.path.join(BASE_DIR, '../traffic')
-#     os.makedirs(traffic_dir, exist_ok=True)
-
-#     return jsonify({"message": "Network configured successfully", "file": file_path})
-
-
-# def generate_docker_compose(scenario):
-#     config = {
-#         'version': '3',
-#         'services': {},
-#         'networks': {
-#             'simulation_network': {'driver': 'bridge'}
-#         }
-#     }
-
-#     for node, details in scenario['topology'].items():
-#         config['services'][node] = {
-#             'image': details['image'],
-#             'networks': ['simulation_network'],
-#             'volumes': [
-#                 '../scripts:/scripts', 
-#                 '../traffic:/traffic'
-#             ]
-#         }
-#         if details['ports']:
-#             config['services'][node]['ports'] = details['ports']
-
-#     return yaml.dump(config, default_flow_style=False)
-
-
-# @app.route('/build_images', methods=['POST'])
-# def build_images():
-#     try:
-#         # Change to the VULHUB_BASE_PATH directory
-#         os.chdir(NEW_TEST_PATH)
-
-#         # Build the Docker images
-#         subprocess.run(["docker-compose", "build"], check=True)
-#         # not working yet
-#         return jsonify({
-#             "message": "Docker images built successfully",
-#         }), 200
-#     except subprocess.CalledProcessError as e:
-#         return jsonify({
-#             "error": "Failed to build Docker images",
-#             "details": str(e)
-#         }), 500
-#     except Exception as e:
-#         return jsonify({
-#             "error": "An unexpected error occurred",
-#             "details": str(e)
-#         }), 500
-
-# def generate_docker_compose(scenario):
-#     config = {
-#         'version': '3',
-#         'services': {},
-#         'networks': {
-#             'simulation_network': {'driver': 'bridge'}
-#         }
-#     }
-
-#     for node, details in scenario['topology'].items():
-#         config['services'][node] = {
-#             'image': details['image'],
-#             'networks': ['simulation_network'],
-#             'volumes': [
-#                 './scripts:/scripts'
-#             ]
-#         }
-#         if details['ports']:
-#             config['services'][node]['ports'] = details['ports']
-
-#     return yaml.dump(config, default_flow_style=False)
-
-# def generate_docker_compose(sophistication_level, malicious_traffic, benign_traffic):
-#     network_config = {
-#         'version': '3',
-#         'services': {},
-#         'networks': {}
-#     }
-
-#     # Common services
-#     network_config['services']['attacker'] = {
-#         'build': './attacker',
-#         'image': 'attacker_image:latest',
-#         'networks': ['internet'],
-#         'volumes': [
-#             './malicious_traffic:/malicious_traffic',
-#             './traffic_scripts:/traffic_scripts'
-#         ],
-#         'environment': [
-#             f"MALICIOUS_TRAFFIC={','.join(malicious_traffic)}",
-#             "TARGET_HOST=public_server"
-#         ],
-#         'cap_add': ['NET_ADMIN', 'NET_RAW'],
-#         'command': 'python3 /traffic_scripts/generate_malicious_traffic.py'
-#     }
-#     network_config['services']['user'] = {
-#         'build': './user',
-#         'image': 'user_image:latest',
-#         'networks': ['internet'],
-#         'volumes': [
-#             './benign_traffic:/benign_traffic',
-#             './traffic_scripts:/traffic_scripts'
-#         ],
-#         'environment': [
-#             f"BENIGN_TRAFFIC={','.join(benign_traffic)}",
-#             "TARGET_HOST=public_server"
-#         ],
-#         'cap_add': ['NET_ADMIN', 'NET_RAW'],
-#         'command': 'python3 /traffic_scripts/generate_benign_traffic.py'
-#     }
-
-
-#     # Add networks
-#     network_config['networks']['internet'] = None
-
-#     if sophistication_level >= 1:
-#         network_config['services']['public_server'] = {
-#             'image': 'nginx:latest',
-#             'networks': ['internet']
-#         }
-
-#     if sophistication_level >= 2:
-#         network_config['services']['firewall'] = {
-#             'image': 'alpine:latest',
-#             'networks': ['internet', 'internal']
-#         }
-#         network_config['networks']['internal'] = None
-#         network_config['services']['public_server']['networks'] = ['internal']
-
-#     if sophistication_level >= 3:
-#         network_config['services']['dmz_switch'] = {
-#             'image': 'alpine:latest',
-#             'networks': ['dmz']
-#         }
-#         network_config['services']['internal_switch'] = {
-#             'image': 'alpine:latest',
-#             'networks': ['internal']
-#         }
-#         network_config['services']['internal_desktop'] = {
-#             'image': 'ubuntu:latest',
-#             'networks': ['internal']
-#         }
-#         network_config['services']['internal_server'] = {
-#             'image': 'ubuntu:latest',
-#             'networks': ['internal']
-#         }
-#         network_config['networks']['dmz'] = None
-
-#     if sophistication_level >= 4:
-#         network_config['services']['subnet1'] = {
-#             'image': 'alpine:latest',
-#             'networks': ['internal']
-#         }
-#         network_config['services']['subnet2'] = {
-#             'image': 'alpine:latest',
-#             'networks': ['internal']
-#         }
-#         network_config['services']['internal_desktop_2'] = {
-#             'image': 'ubuntu:latest',
-#             'networks': ['internal']
-#         }
-#         network_config['services']['internal_server_2'] = {
-#             'image': 'ubuntu:latest',
-#             'networks': ['internal']
-#         }
-
-#     # Add environment variables for traffic types
-#     network_config['services']['attacker']['environment'] = [f"MALICIOUS_TRAFFIC={','.join(malicious_traffic)}"]
-#     network_config['services']['user']['environment'] = [f"BENIGN_TRAFFIC={','.join(benign_traffic)}"]
-
-#     return yaml.dump(network_config, default_flow_style=False)
-
-# @app.route('/configure_network', methods=['POST'])
-# def configure_network():
-#     try:
-#         sophistication_level = int(request.form['sophistication_level'])
-#         malicious_traffic = request.form.getlist('malicious_traffic')
-#         benign_traffic = request.form.getlist('benign_traffic')
-
-#         docker_compose_content = generate_docker_compose(sophistication_level, malicious_traffic, benign_traffic)
-
-#         os.makedirs(NEW_TEST_PATH, exist_ok=True)
-#         file_path = os.path.join(NEW_TEST_PATH, 'docker-compose.yml')
-
-#         with open(file_path, 'w') as file:
-#             file.write(docker_compose_content)
-
-#         # Create directories for traffic capture and scripts
-#         os.makedirs(os.path.join(NEW_TEST_PATH, 'malicious_traffic'), exist_ok=True)
-#         os.makedirs(os.path.join(NEW_TEST_PATH, 'benign_traffic'), exist_ok=True)
-#         os.makedirs(os.path.join(NEW_TEST_PATH, 'traffic_scripts'), exist_ok=True)
-#         os.makedirs(os.path.join(NEW_TEST_PATH, 'attacker'), exist_ok=True)
-#         os.makedirs(os.path.join(NEW_TEST_PATH, 'user'), exist_ok=True)
-
-#         return jsonify({
-#             "message": "Docker Compose file generated successfully",
-#             "file_path": file_path
-#         }), 200
-
-#     except Exception as e:
-#         return jsonify({
-#             "error": "Failed to generate Docker Compose file",
-#             "details": str(e)
-#         }), 500
-
+def run_simulation(scenario_id, file_path):
+    simulation_id = simulation_ids[scenario_id]
+    
+    try:
+        # Clean up any existing signal files before starting
+        clean_signal_files(SIGNALS_DIR)
+        
+        # Start the simulation
+        env = os.environ.copy()
+        env['SIMULATION_ID'] = simulation_id
+        subprocess.run(["docker-compose", "-f", file_path, "up", "-d"], env=env, check=True)
+        
+        # Wait for simulation to complete
+        simulation_complete = check_simulation_complete(scenario_id, file_path, simulation_id)
+        
+        if simulation_complete:
+            # Stop the simulation
+            subprocess.run(["docker-compose", "-f", file_path, "down"], check=True)
+            
+            # Update status and notify frontend
+            simulation_status[scenario_id] = "completed"
+            socketio.emit('simulation_complete', {'scenario_id': scenario_id})
+        else:
+            raise Exception("Simulation timed out")
+    except Exception as e:
+        simulation_status[scenario_id] = "error"
+        socketio.emit('simulation_error', {'scenario_id': scenario_id, 'error': str(e)})
+    finally:
+        # Ensure containers are stopped even if an error occurred
+        subprocess.run(["docker-compose", "-f", file_path, "down"], check=True)
+        
+        # Clean up all signal files after the simulation
+        clean_signal_files(SIGNALS_DIR)
 
 @app.route('/start_simulation', methods=['POST'])
 def start_simulation():
     scenario_id = request.form['scenario_id']
-    file_path = os.path.join(DOCKER_COMPOSE_DIR, f"{scenario_id}.yml")
-
-    traffic_dir = os.path.join(BASE_DIR, '../traffic')
-    os.makedirs(traffic_dir, exist_ok=True)
+    level = int(request.form['sophistication_level'])
     
-    try:
-        subprocess.run(["docker-compose", "-f", file_path, "up", "-d"], check=True)
-        return jsonify({"message": "Simulation started successfully"})
-    except subprocess.CalledProcessError as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/stop_simulation', methods=['POST'])
-def stop_simulation():
-    scenario_id = request.form['scenario_id']
-    file_path = os.path.join(DOCKER_COMPOSE_DIR, f"{scenario_id}.yml")
+    scenario = next((s for s in SCENARIOS[level] if s['id'] == scenario_id), None)
+    if not scenario:
+        return jsonify({"error": "Invalid scenario"}), 400
     
-    try:
-        subprocess.run(["docker-compose", "-f", file_path, "down"], check=True)
-        return jsonify({"message": "Simulation stopped successfully"})
-    except subprocess.CalledProcessError as e:
-        return jsonify({"error": str(e)}), 500
+    yaml_file = scenario['yaml_file']
+    file_path = os.path.join(DOCKER_COMPOSE_DIR, yaml_file)
+    
+    simulation_status[scenario_id] = "running"
+    simulation_ids[scenario_id] = str(uuid.uuid4())
+    
+    # Start simulation in a separate thread
+    thread = threading.Thread(target=run_simulation, args=(scenario_id, file_path))
+    thread.start()
+    
+    return jsonify({"message": "Simulation started successfully. This may take a few moments to complete..."})
+
+@app.route('/simulation_status', methods=['GET'])
+def get_simulation_status():
+    scenario_id = request.args.get('scenario_id')
+    status = simulation_status.get(scenario_id, "not_found")
+    return jsonify({"status": status})
+
+if __name__ == '__main__':
+    socketio.run(app, debug=True)
 
 

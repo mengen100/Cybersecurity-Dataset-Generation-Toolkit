@@ -36,3 +36,7 @@ if __name__ == "__main__":
     user = os.environ.get('FTP_USER', 'ftpuser')
     password = os.environ.get('FTP_PASSWORD', 'simulation_default_pass')
     ftp_transfer(host, user, password)
+    
+    simulation_id = os.environ.get('SIMULATION_ID', 'unknown')
+    with open(f'/signals/user_done_{simulation_id}', 'w') as f:
+        f.write('done')

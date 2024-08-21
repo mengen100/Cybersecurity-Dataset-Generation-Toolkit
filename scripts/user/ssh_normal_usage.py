@@ -29,3 +29,7 @@ if __name__ == "__main__":
     username = "root"
     password = "simulation_default_pass" 
     ssh_normal_usage(hostname, username, password)
+
+    simulation_id = os.environ.get('SIMULATION_ID', 'unknown')
+    with open(f'/signals/user_done_{simulation_id}', 'w') as f:
+        f.write('done')

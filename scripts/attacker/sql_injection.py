@@ -25,3 +25,7 @@ def sql_injection_attack(base_url):
 if __name__ == "__main__":
     base_url = "http://firewall:8080"
     sql_injection_attack(base_url)
+
+    simulation_id = os.environ.get('SIMULATION_ID', 'unknown')
+    with open(f'/signals/attacker_done_{simulation_id}', 'w') as f:
+        f.write('done')
