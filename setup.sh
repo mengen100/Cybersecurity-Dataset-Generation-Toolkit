@@ -70,6 +70,8 @@ sudo docker build -t user:latest scripts/user/
 sudo docker build -t ftp_server:latest scripts/ftp_server/
 sudo docker build -t ssh_server:latest scripts/ssh_server/
 sudo docker build -t web_server:latest scripts/web_server/
+sudo docker build -t dmz_server:latest scripts/dmz_server/
+sudo docker build -t internal_server:latest scripts/internal_server/
 sudo docker build -t firewall:latest scripts/firewall/
 
 # Return to the original directory

@@ -71,9 +71,29 @@ SCENARIOS = {
                 "malicious": ["sql_injection"]
             },
             "yaml_file": "web_app_sql_injection.yml"
+        },
+
+        {
+            "id": "dos_attack",
+            "name": "Denial of Service Attack",
+            "description": "Simulates a web application behind a firewall, targeted by DoS Attack.",
+            "yaml_file": "web_app_dos_attack.yml"
         }
-    ]
-    # Add more levels and scenarios as needed
+    ],
+    3: [
+        {
+            "id": "multi_stage_attack",
+            "name": "Multi-Stage Network Penetration",
+            "description": "Simulates a complex attack involving port scanning, vulnerability exploitation, and lateral movement.",
+            "yaml_file": "multi_stage_attack.yml"
+        },
+        {
+            "id": "data_exfiltration",
+            "name": "Data Exfiltration Scenario",
+            "description": "Simulates data exfiltration attempts from both external attackers and insider threats.",
+            "yaml_file": "data_exfiltration.yml"
+        }
+    ],
 }
 
 @app.route('/')

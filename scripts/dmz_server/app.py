@@ -1,22 +1,14 @@
-from flask import Flask, request, jsonify
-import mysql.connector
+from flask import Flask, request, jsonify, render_template
+import subprocess
 import os
 
 app = Flask(__name__)
-
-def get_db_connection():
-    return mysql.connector.connect(
-        host="database",
-        user="root",
-        password="password",
-        database="app_db"
-    )
 
 @app.route('/')
 def home():
     return "Welcome to the Web app!"
 
-@app.route('/login')
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     username = request.args.get('username')
     password = request.args.get('password')
@@ -75,5 +67,16 @@ def about():
 def contact():
     return "Contact information for our vulnerable web app"
 
+@app.route('/vulnerable_endpoint', methods=['POST'])
+def vulnerable_endpoint():
+    data = request.json
+    if 'command' in data:
+        try:
+            output = subprocess.check_output(data['command'], shell=True, stderr=subprocess.STDOUT)
+            return jsonify({"output": output.decode()})
+        except subprocess.CalledProcessError as e:
+            return jsonify({"error": e.output.decode()}), 500
+    return jsonify({"error": "Invalid request"}), 400
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=80)

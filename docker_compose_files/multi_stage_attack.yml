@@ -1,0 +1,76 @@
+version: '3'
+services:
+  attacker:
+    image: attacker:latest
+    networks:
+      - internet
+    volumes:
+      - ../scripts:/scripts
+      - ../traffic:/traffic
+      - ../signals:/signals
+    command: >
+      /bin/bash -c "
+      tcpdump -i any -w ../traffic/multi_stage_attack.pcap & python3 /scripts/attacker/multi_stage_attack.py;
+      touch /signals/attacker_done_$${SIMULATION_ID};
+      tail -f /dev/null
+      "
+    environment:
+      - SIMULATION_ID
+    depends_on:
+      - dmz_server
+
+  user:
+    image: user:latest
+    networks:
+      - internet
+    volumes:
+      - ../scripts:/scripts
+      - ../traffic:/traffic
+      - ../signals:/signals
+    command: >
+      /bin/bash -c "
+      tcpdump -i any -w ../traffic/normal_user_activity.pcap & python3 /scripts/user/normal_user_activity.py;
+      touch /signals/user_done_$${SIMULATION_ID};
+      tail -f /dev/null
+      "
+    environment:
+      - SIMULATION_ID
+    depends_on:
+      - dmz_server
+
+  firewall:
+    image: firewall:latest
+    networks:
+      - internet
+      - dmz
+      - internal
+    ports:
+      - "8080:8080"
+
+  dmz_server:
+    image: dmz_server:latest
+    networks:
+      - internet
+      - dmz
+    ports:
+      - "880:80"
+      - "222:22"
+    volumes:
+      - ../scripts/dmz_server:/app
+
+  internal_server:
+    image: internal_server:latest
+    networks:
+      - internal
+    ports:
+      - "22:22"
+    volumes:
+      - ../scripts/internal_server:/app
+
+networks:
+  internet:
+    driver: bridge
+  dmz:
+    driver: bridge
+  internal:
+    driver: bridge
