@@ -24,8 +24,8 @@ SCENARIOS = {
     1: [
         {
             "id": "file_transfer_bruteforce",
-            "name": "FTP File Transfer and Brute Force Attack",
-            "description": "Simulates a file transfer server and a brute force attack attempt.",
+            "name": "1. FTP File Transfer and Brute Force Attack",
+            "description": "Simulates normal FTP file transfers alongside a brute force attack attempt on the FTP server.",
             "topology": {
                 "attacker": {"image": "attacker:latest", "ports": []},
                 "user": {"image": "user:latest", "ports": []},
@@ -35,13 +35,14 @@ SCENARIOS = {
                 "benign": ["ftp_transfer"],
                 "malicious": ["ftp_bruteforce"]
             },
-            "yaml_file": "file_transfer_bruteforce.yml"
+            "yaml_file": "file_transfer_bruteforce.yml",
+            "image_url": "/static/images/L1FTP.png"
         },
 
         {
             "id": "ssh_login_bruteforce",
-            "name": "SSH Normal Usage and Brute Force Attack",
-            "description": "Simulates a normal SSH login usage and a brute force attack attempt.",
+            "name": "2. SSH Normal Usage and Brute Force Attack",
+            "description": "Simulates routine SSH commands and an SSH brute force attack attempt.",
             "topology": {
                 "attacker": {"image": "attacker:latest", "ports": []},
                 "user": {"image": "user:latest", "ports": []},
@@ -51,14 +52,15 @@ SCENARIOS = {
                 "benign": ["ssh_transfer"],
                 "malicious": ["ssh_bruteforce"]
             },
-            "yaml_file": "ssh_login_bruteforce.yml"
+            "yaml_file": "ssh_login_bruteforce.yml",
+            "image_url": "/static/images/L1SSH.png"
         }
     ],
     2: [
         {
             "id": "web_app_sql_injection",
-            "name": "Web Application with SQL Injection",
-            "description": "Simulates a web application behind a firewall, targeted by SQL injection.",
+            "name": "1. Web Application with SQL Injection",
+            "description": "Combines normal web traffic with SQL injection attempts against a firewalled web application.",
             "topology": {
                 "attacker": {"image": "attacker:latest", "ports": []},
                 "user": {"image": "user:latest", "ports": []},
@@ -70,29 +72,32 @@ SCENARIOS = {
                 "benign": ["web_browsing", "database_queries"],
                 "malicious": ["sql_injection"]
             },
-            "yaml_file": "web_app_sql_injection.yml"
+            "yaml_file": "web_app_sql_injection.yml",
+            "image_url": "/static/images/L2.png"
         },
 
         {
             "id": "dos_attack",
-            "name": "Denial of Service Attack",
-            "description": "Simulates a web application behind a firewall, targeted by DoS Attack.",
-            "yaml_file": "web_app_dos_attack.yml"
+            "name": "2. Denial of Service Attack",
+            "description": "Simulates regular web usage and a DoS attack targeting a firewalled web server.",
+            "yaml_file": "web_app_dos_attack.yml",
+            "image_url": "/static/images/L2.png"
         }
     ],
     3: [
         {
             "id": "multi_stage_attack",
-            "name": "Multi-Stage Network Penetration",
+            "name": "1. Multi-Stage Network Penetration",
             "description": "Simulates a complex attack involving port scanning, vulnerability exploitation, and lateral movement.",
-            "yaml_file": "multi_stage_attack.yml"
+            "yaml_file": "multi_stage_attack.yml",
+            "image_url": "/static/images/L3.png"
         },
         {
             "id": "data_exfiltration",
-            "name": "Data Exfiltration Scenario",
+            "name": "2. Data Exfiltration Scenario",
             "description": "Simulates data exfiltration attempts from both external attackers and insider threats.",
             "yaml_file": "data_exfiltration.yml",
-            "image_url": "/static/images/data_exfiltration.png"
+            "image_url": "/static/images/L3.png"
         }
     ],
 }
