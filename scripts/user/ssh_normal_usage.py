@@ -25,7 +25,7 @@ def ssh_normal_usage(hostname, username, password):
         print(f"Error: {str(e)}")
 
 if __name__ == "__main__":
-    hostname = "ssh_server"
+    hostname = "172.16.238.12"
     username = "root"
     password = "simulation_default_pass" 
     ssh_normal_usage(hostname, username, password)

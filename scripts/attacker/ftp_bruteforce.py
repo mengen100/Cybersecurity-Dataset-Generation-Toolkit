@@ -17,7 +17,7 @@ def ftp_bruteforce(host, userlist, passlist):
 
 
 if __name__ == "__main__":
-    host = "ftp_server"
+    host = "172.16.238.12"
     userlist = ["admin", "user", "root","ftpuser"]
     passlist = ["password", "123456", "admin","ftppassword"]
     ftp_bruteforce(host, userlist, passlist)

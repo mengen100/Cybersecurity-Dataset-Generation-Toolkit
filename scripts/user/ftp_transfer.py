@@ -32,7 +32,7 @@ def ftp_transfer(host, user, password):
         print("Failed to connect to FTP server after multiple attempts")
 
 if __name__ == "__main__":
-    host = os.environ.get('FTP_HOST', 'ftp_server')
+    host = "172.16.238.12"
     user = os.environ.get('FTP_USER', 'ftpuser')
     password = os.environ.get('FTP_PASSWORD', 'simulation_default_pass')
     ftp_transfer(host, user, password)

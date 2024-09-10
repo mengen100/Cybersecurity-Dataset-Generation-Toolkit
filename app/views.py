@@ -3,7 +3,7 @@ import time
 import threading
 import uuid
 import subprocess
-from flask import render_template, request, jsonify
+from flask import render_template, request, jsonify, send_from_directory
 from flask_socketio import SocketIO, emit
 from app import app
 import yaml
@@ -91,10 +91,18 @@ SCENARIOS = {
             "id": "data_exfiltration",
             "name": "Data Exfiltration Scenario",
             "description": "Simulates data exfiltration attempts from both external attackers and insider threats.",
-            "yaml_file": "data_exfiltration.yml"
+            "yaml_file": "data_exfiltration.yml",
+            "image_url": "/static/images/data_exfiltration.png"
         }
     ],
 }
+
+APP_ROOT = os.path.dirname(os.path.abspath(__file__))
+IMAGES_FOLDER = os.path.join(APP_ROOT, 'static', 'images')
+
+@app.route('/static/images/<path:filename>')
+def serve_image(filename):
+    return send_from_directory(IMAGES_FOLDER, filename)
 
 @app.route('/')
 def index():

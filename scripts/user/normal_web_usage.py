@@ -24,7 +24,7 @@ def normal_web_usage(base_url):
         time.sleep(random.uniform(1, 3))
 
 if __name__ == "__main__":
-    base_url = "http://firewall:8080"
+    base_url = "http://172.16.238.2"
     normal_web_usage(base_url)
 
     simulation_id = os.environ.get('SIMULATION_ID', 'unknown')

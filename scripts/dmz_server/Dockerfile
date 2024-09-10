@@ -9,7 +9,8 @@ RUN apt-get update && apt-get install -y \
     iproute2 \
     net-tools \
     sshpass \
-    python3-venv
+    python3-venv \
+    iputils-ping
 
 # Create a virtual environment
 RUN python3 -m venv /opt/venv

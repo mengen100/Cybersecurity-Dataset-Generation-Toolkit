@@ -73,6 +73,7 @@ sudo docker build -t web_server:latest scripts/web_server/
 sudo docker build -t dmz_server:latest scripts/dmz_server/
 sudo docker build -t internal_server:latest scripts/internal_server/
 sudo docker build -t firewall:latest scripts/firewall/
+sudo docker build -t php_server:latest scripts/php_server/
 
 # Return to the original directory
 cd -

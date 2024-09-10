@@ -1,60 +1,66 @@
 version: '3'
 services:
   attacker:
-    command: >
-      /bin/bash -c "
-      tcpdump -i any -w ../traffic/ftp_malicious.pcap & python3 /scripts/attacker/ftp_bruteforce.py;
-      touch /signals/attacker_done_$${SIMULATION_ID};
-      tail -f /dev/null"
     image: attacker:latest
     networks:
-    - simulation_network
+      simulation_network:
+        ipv4_address: 172.16.238.10
     volumes:
-    - ../scripts:/scripts
-    - ../traffic:/traffic
-    - ../signals:/signals
+      - ../scripts:/scripts
+      - ../traffic:/traffic
+      - ../signals:/signals
+    command: >
+      /bin/bash -c "
+      tcpdump -i any -w ../traffic/malicoius_ftp_bruteforce.pcap & python3 /scripts/attacker/ftp_bruteforce.py;
+      touch /signals/attacker_done_$${SIMULATION_ID};
+      tail -f /dev/null"
     depends_on:
       - ftp_server
     environment:
       - SIMULATION_ID
+      - FTP_SERVER=172.16.238.12
 
   user:
-    command: >
-      /bin/bash -c "
-      tcpdump -i any -w ../traffic/ftp_benign.pcap & python3 /scripts/user/ftp_transfer.py;
-      touch /signals/user_done_$${SIMULATION_ID};
-      tail -f /dev/null"
     image: user:latest
     networks:
-    - simulation_network
+      simulation_network:
+        ipv4_address: 172.16.238.11
     volumes:
-    - ../scripts:/scripts
-    - ../traffic:/traffic
-    - ../signals:/signals
+      - ../scripts:/scripts
+      - ../traffic:/traffic
+      - ../signals:/signals
+    command: >
+      /bin/bash -c "
+      tcpdump -i any -w ../traffic/benign_ftp_activity.pcap & python3 /scripts/user/ftp_transfer.py;
+      touch /signals/user_done_$${SIMULATION_ID};
+      tail -f /dev/null"
     environment:
-      - FTP_HOST=ftp_server
+      - SIMULATION_ID
+      - FTP_HOST=172.16.238.12
       - FTP_USER=ftpuser
       - FTP_PASSWORD=ftppassword
     depends_on:
       - ftp_server
-    environment:
-      - SIMULATION_ID
 
   ftp_server:
     image: ftp_server:latest
     networks:
-      - simulation_network
-    ports:
-      - '21:21'
-      - '30000-30009:30000-30009'
+      simulation_network:
+        ipv4_address: 172.16.238.12
     command: >
       /bin/bash -c "
       mkdir -p /traffic &&
       chmod 777 /traffic &&
-      /usr/sbin/vsftpd /etc/vsftpd.conf;tail -f /dev/null
-      "
-  
+      /usr/sbin/vsftpd /etc/vsftpd.conf;
+      tail -f /dev/null"
+    ports:
+      - "21:21"
+      - "20:20"
+      - "21100-21110:21100-21110"
+
 networks:
   simulation_network:
     driver: bridge
-
+    ipam:
+      config:
+        - subnet: 172.16.238.0/24

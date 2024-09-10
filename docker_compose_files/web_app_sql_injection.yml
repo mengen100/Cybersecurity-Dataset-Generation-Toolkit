@@ -3,71 +3,82 @@ services:
   attacker:
     image: attacker:latest
     networks:
-      - internet
+      internet:
+        ipv4_address: 172.16.238.10
     volumes:
       - ../scripts:/scripts
       - ../traffic:/traffic
       - ../signals:/signals
     command: >
       /bin/bash -c "
-      tcpdump -i any -w ../traffic/sqli_malicious.pcap & python3 /scripts/attacker/sql_injection.py;
+      tcpdump -i any -w ../traffic/malicious_sql_injection.pcap & python3 /scripts/attacker/sql_injection.py;
       touch /signals/attacker_done_$${SIMULATION_ID};
       tail -f /dev/null
       "
     depends_on:
-      - web_server
+      - firewall
     environment:
       - SIMULATION_ID
 
   user:
     image: user:latest
     networks:
-      - internet
+      internet:
+        ipv4_address: 172.16.238.11
     volumes:
       - ../scripts:/scripts
       - ../traffic:/traffic
       - ../signals:/signals
     command: >
       /bin/bash -c "
-      tcpdump -i any -w ../traffic/normal_web_usage.pcap & python3 /scripts/user/normal_web_usage.py;
+      tcpdump -i any -w ../traffic/benign_normal_web_usage.pcap & python3 /scripts/user/normal_web_usage.py;
       touch /signals/user_done_$${SIMULATION_ID};
       tail -f /dev/null
       "
     depends_on:
-      - web_server
+      - firewall
     environment:
       - SIMULATION_ID
 
   firewall:
     image: firewall:latest
     networks:
-      - internet
-      - internal
-    ports:
-      - "8080:8080"
+      internet:
+        ipv4_address: 172.16.238.2
+      internal:
+        ipv4_address: 172.16.239.2
+    cap_add:
+      - NET_ADMIN
 
   web_server:
     image: web_server:latest
     networks:
-      - internal
+      internal:
+        ipv4_address: 172.16.239.10
     environment:
-      - DATABASE_URL=mysql://root:password@database/app_db
+      - DATABASE_URL=mysql://root:password@172.16.239.11/app_db
     depends_on:
       - database
 
   database:
     image: mysql:5.7
     networks:
-      - internal
+      internal:
+        ipv4_address: 172.16.239.11
     environment:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: app_db
     volumes:
       - ../scripts/web_server/init.sql:/docker-entrypoint-initdb.d/init.sql
 
-
 networks:
   internet:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.16.238.0/24
   internal:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.16.239.0/24

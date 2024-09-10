@@ -17,7 +17,7 @@ def dos_attack(target_url, duration=60, requests_per_second=10):
     print("DoS attack completed")
 
 if __name__ == "__main__":
-    target_url = "http://firewall:8080"
+    target_url = "http://172.16.238.2"
     dos_attack(target_url)
 
     simulation_id = os.environ.get('SIMULATION_ID', 'unknown')
