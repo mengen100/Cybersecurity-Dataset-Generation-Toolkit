@@ -13,7 +13,7 @@ def normal_activity(base_url):
 
     session = requests.Session()
 
-    while True:
+    for _ in range(10):
         action = random.choice(actions)
         url = base_url + action[1]
         
@@ -27,7 +27,7 @@ def normal_activity(base_url):
         except requests.exceptions.RequestException as e:
             print(f"Error accessing {url}: {str(e)}")
         
-        time.sleep(random.uniform(1, 5))
+        time.sleep(random.uniform(1, 3))
 
 if __name__ == "__main__":
     base_url = "http://172.16.238.2"

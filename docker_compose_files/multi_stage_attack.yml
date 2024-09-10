@@ -72,7 +72,7 @@ services:
     cap_add:
       - NET_ADMIN
     command: >
-        sh -c "ip route add 172.16.240.0/24 via 172.16.239.2"
+        sh -c "ip route add 172.16.240.0/24 via 172.16.239.2; tail -f /dev/null"
 
   internal_server:
     image: internal_server:latest
