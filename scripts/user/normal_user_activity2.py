@@ -1,6 +1,7 @@
 import requests
 import time
 import random
+import os
 
 def normal_web_usage(base_url):
     actions = [

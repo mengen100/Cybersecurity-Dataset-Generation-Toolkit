@@ -1,6 +1,7 @@
 import requests
 import time
 import random
+import os
 
 def normal_activity(base_url):
     actions = [

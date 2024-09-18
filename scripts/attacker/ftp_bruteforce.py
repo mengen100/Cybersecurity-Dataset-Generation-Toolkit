@@ -1,6 +1,7 @@
 import ftplib
 import random
 import time
+import os
 
 def ftp_bruteforce(host, userlist, passlist):
     for user in userlist:

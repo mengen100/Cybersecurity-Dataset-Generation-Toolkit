@@ -1,16 +1,33 @@
 from flask import Flask, request, jsonify
+from urllib.parse import urlparse
 import mysql.connector
 import os
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
 def get_db_connection():
-    return mysql.connector.connect(
-        host="database",
-        user="root",
-        password="password",
-        database="app_db"
-    )
+    url = urlparse(os.environ['DATABASE_URL'])
+    logger.debug(f"Parsed DATABASE_URL - hostname: {url.hostname}, username: {url.username}, database: {url.path[1:]}")
+    
+    try:
+        conn = mysql.connector.connect(
+            host=url.hostname,
+            user=url.username,
+            password=url.password,
+            database=url.path[1:],
+            connect_timeout=10
+        )
+        logger.debug("Database connection successful")
+        return conn
+    except mysql.connector.Error as err:
+        logger.error(f"Database connection failed: {err}")
+        logger.error(f"Error code: {err.errno}")
+        logger.error(f"SQL State: {err.sqlstate}")
+        raise
 
 @app.route('/')
 def home():
@@ -76,4 +93,4 @@ def contact():
     return "Contact information for our vulnerable web app"
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=80)

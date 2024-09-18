@@ -2,6 +2,7 @@ import requests
 import time
 import subprocess
 import base64
+import os
 
 def exploit_web_vulnerability(target):
     print("Stage 1: Exploiting web vulnerability")
@@ -101,3 +102,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+    simulation_id = os.environ.get('SIMULATION_ID', 'unknown')
+    with open(f'/signals/attacker_done_{simulation_id}', 'w') as f:
+        f.write('done')
