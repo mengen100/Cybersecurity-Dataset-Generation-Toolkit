@@ -11,7 +11,7 @@ services:
       - ../signals:/signals
     command: >
       /bin/bash -c "
-      tcpdump -i any -w ../traffic/malicious_multi_stage_attack.pcap & python3 -u /scripts/attacker/multi_stage_attack.py 2>&1 | tee /tmp/attack_log.txt;
+      tcpdump -i any -w ../traffic/multi_stage_attack_malicious.pcap & python3 -u /scripts/attacker/multi_stage_attack.py 2>&1 | tee /tmp/attack_log.txt;
       touch /signals/attacker_done_$${SIMULATION_ID};
       tail -f /dev/null
       "
@@ -37,7 +37,7 @@ services:
       - ../signals:/signals
     command: >
       /bin/bash -c "
-      tcpdump -i any -w ../traffic/benign_normal_user_activity.pcap & python3 /scripts/user/normal_user_activity.py;
+      tcpdump -i any -w ../traffic/multi_stage_attack_benign.pcap & python3 /scripts/user/normal_user_activity.py;
       touch /signals/user_done_$${SIMULATION_ID};
       tail -f /dev/null
       "

@@ -11,7 +11,7 @@ services:
       - ../signals:/signals
     command: >
       /bin/bash -c "
-      tcpdump -i any -w ../traffic/malicious_sql_injection.pcap & python3 /scripts/attacker/sql_injection.py;
+      tcpdump -i any -w ../traffic/dos_attack_malicious.pcap & python3 /scripts/attacker/dos_attack.py;
       touch /signals/attacker_done_$${SIMULATION_ID};
       tail -f /dev/null
       "
@@ -31,7 +31,7 @@ services:
       - ../signals:/signals
     command: >
       /bin/bash -c "
-      tcpdump -i any -w ../traffic/benign_normal_web_usage.pcap & python3 /scripts/user/normal_web_usage.py;
+      tcpdump -i any -w ../traffic/dos_attack_benign.pcap & python3 /scripts/user/normal_web_usage.py;
       touch /signals/user_done_$${SIMULATION_ID};
       tail -f /dev/null
       "
@@ -49,8 +49,6 @@ services:
         ipv4_address: 172.16.239.2
     cap_add:
       - NET_ADMIN
-    depends_on:
-      - web_server
 
   web_server:
     image: web_server:latest
@@ -58,7 +56,7 @@ services:
       internal:
         ipv4_address: 172.16.239.10
     environment:
-      - DATABASE_URL=mysql://root:password@database/app_db
+      - DATABASE_URL=mysql://root:password@172.16.239.11/app_db
     depends_on:
       - database
 

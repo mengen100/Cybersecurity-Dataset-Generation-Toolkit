@@ -77,6 +77,8 @@
                             <i class="fas fa-play me-2"></i>Start Simulation
                         </button>
                         <div id="message" class="mt-3"></div>
+                        <div id="downloadButtons" class="mt-3" style="display: none;">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -158,6 +160,7 @@
                 $('#message').html('<div class="alert alert-success">Simulation completed successfully!</div>');
                 $('#startSimulation').show();
                 $('#stopSimulation').hide();
+                showDownloadButtons(data.scenario_id);
             });
 
             socket.on('simulation_error', function(data) {
@@ -206,6 +209,24 @@
                         }, 5000);  // Poll every 5 seconds
                     }
                 });
+            }
+
+            function showDownloadButtons(scenarioId) {
+                fetch(`/get_pcap_files/${scenarioId}`)
+                    .then(response => response.json())
+                    .then(files => {
+                        let downloadDiv = document.getElementById('downloadButtons');
+                        downloadDiv.innerHTML = '';
+
+                        // Create a single button to download both benign and malicious traffic
+                        let zipButton = document.createElement('a');
+                        zipButton.href = `/download_zip/${scenarioId}`;
+                        zipButton.className = 'btn btn-primary m-2';
+                        zipButton.innerText = `Download All PCAPs as ZIP`;
+                        downloadDiv.appendChild(zipButton);
+
+                        downloadDiv.style.display = 'block';
+                    });
             }
 
             // $('#stopSimulation').click(function() {

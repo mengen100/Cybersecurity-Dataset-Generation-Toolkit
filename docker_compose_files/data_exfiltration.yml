@@ -11,7 +11,7 @@ services:
       - ../signals:/signals
     command: >
       /bin/bash -c "
-      tcpdump -i any -w ../traffic/malicious_multi_stage_attack.pcap & python3 -u /scripts/attacker/data_exfiltration.py 2>&1 | tee /tmp/attack_log.txt;
+      tcpdump -i any -w ../traffic/data_exfiltration_malicious.pcap & python3 -u /scripts/attacker/data_exfiltration.py 2>&1 | tee /tmp/attack_log.txt;
       touch /signals/attacker_done_$${SIMULATION_ID};
       tail -f /dev/null
       "
@@ -20,10 +20,7 @@ services:
       - PYTHONUNBUFFERED=1
     depends_on:
       - firewall
-    labels:
-      "docker_compose_diagram.icon": "hacker"
-      "docker_compose_diagram.cluster": "Internet"
-      # "docker_compose_diagram.description": "Attacker"
+    
   user:
     image: user:latest
     networks:
@@ -35,7 +32,7 @@ services:
       - ../signals:/signals
     command: >
       /bin/bash -c "
-      tcpdump -i any -w ../traffic/benign_normal_user_activity2.pcap & python3 /scripts/user/normal_user_activity2.py;
+      tcpdump -i any -w ../traffic/data_exfiltration_benign.pcap & python3 /scripts/user/normal_user_activity2.py;
       touch /signals/user_done_$${SIMULATION_ID};
       tail -f /dev/null
       "
@@ -43,10 +40,6 @@ services:
       - SIMULATION_ID
     depends_on:
       - firewall
-    labels:
-      "docker_compose_diagram.icon": "user"
-      "docker_compose_diagram.cluster": "Internet"
-      # "docker_compose_diagram.description": "User"
 
   firewall:
     image: firewall:latest
@@ -66,9 +59,6 @@ services:
     depends_on:
       - php_server
       - internal_server
-    labels:
-      "docker_compose_diagram.icon": "firewall"
-      # "docker_compose_diagram.description": "firewall"
 
   php_server:
     image: php_server:latest
@@ -81,10 +71,6 @@ services:
       - NET_ADMIN
     command: >
         sh -c "ip route add 172.16.240.0/24 via 172.16.239.2 && apache2-foreground"
-    labels:
-      "docker_compose_diagram.icon": "server"
-      "docker_compose_diagram.cluster": "DMZ"
-      # "docker_compose_diagram.description": "PHP Server"
 
   db:
     image: mysql:5.7
@@ -97,10 +83,6 @@ services:
       MYSQL_ROOT_HOST: '%'
     volumes:
       - ../scripts/php_server/mysql_data:/var/lib/mysql
-    labels:
-      "docker_compose_diagram.icon": "server"
-      "docker_compose_diagram.cluster": "DMZ"
-      # "docker_compose_diagram.description": "Database Server"
 
   internal_server:
     image: internal_server:latest
@@ -109,10 +91,6 @@ services:
         ipv4_address: 172.16.240.10
     volumes:
       - ../scripts/internal_server:/app
-    labels:
-      "docker_compose_diagram.icon": "server"
-      "docker_compose_diagram.cluster": "Internal"
-      # "docker_compose_diagram.description": "Internal Server"
 
 networks:
   internet:

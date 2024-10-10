@@ -1,9 +1,11 @@
 import os
 import time
 import threading
+import zipfile
 import uuid
+import io
 import subprocess
-from flask import render_template, request, jsonify, send_from_directory
+from flask import render_template, request, jsonify, send_from_directory, send_file
 from flask_socketio import SocketIO, emit
 from app import app
 import yaml
@@ -23,7 +25,7 @@ SIGNALS_DIR = os.path.join(BASE_DIR, '../signals')
 SCENARIOS = {
     1: [
         {
-            "id": "file_transfer_bruteforce",
+            "id": "ftp_bruteforce",
             "name": "1. FTP File Transfer and Brute Force Attack",
             "description": "Simulates normal FTP file transfers alongside a brute force attack attempt on the FTP server.",
             "topology": {
@@ -35,12 +37,12 @@ SCENARIOS = {
                 "benign": ["ftp_transfer"],
                 "malicious": ["ftp_bruteforce"]
             },
-            "yaml_file": "file_transfer_bruteforce.yml",
+            "yaml_file": "ftp_bruteforce.yml",
             "image_url": "/static/images/L1FTP.png"
         },
 
         {
-            "id": "ssh_login_bruteforce",
+            "id": "ssh_bruteforce",
             "name": "2. SSH Normal Usage and Brute Force Attack",
             "description": "Simulates routine SSH commands and an SSH brute force attack attempt.",
             "topology": {
@@ -52,13 +54,13 @@ SCENARIOS = {
                 "benign": ["ssh_transfer"],
                 "malicious": ["ssh_bruteforce"]
             },
-            "yaml_file": "ssh_login_bruteforce.yml",
+            "yaml_file": "ssh_bruteforce.yml",
             "image_url": "/static/images/L1SSH.png"
         }
     ],
     2: [
         {
-            "id": "web_app_sql_injection",
+            "id": "sql_injection",
             "name": "1. Web Application with SQL Injection",
             "description": "Combines normal web traffic with SQL injection attempts against a firewalled web application.",
             "topology": {
@@ -72,7 +74,7 @@ SCENARIOS = {
                 "benign": ["web_browsing", "database_queries"],
                 "malicious": ["sql_injection"]
             },
-            "yaml_file": "web_app_sql_injection.yml",
+            "yaml_file": "sql_injection.yml",
             "image_url": "/static/images/L2.png"
         },
 
@@ -80,7 +82,7 @@ SCENARIOS = {
             "id": "dos_attack",
             "name": "2. Denial of Service Attack",
             "description": "Simulates regular web usage and a DoS attack targeting a firewalled web server.",
-            "yaml_file": "web_app_dos_attack.yml",
+            "yaml_file": "dos_attack.yml",
             "image_url": "/static/images/L2.png"
         }
     ],
@@ -113,13 +115,42 @@ def serve_image(filename):
 def index():
     return render_template('index.html')
 
-def generate_password(length=12):
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
-
 @app.route('/get_scenarios', methods=['GET'])
 def get_scenarios():
     level = int(request.args.get('level', 1))
     return jsonify(SCENARIOS.get(level, []))
+
+@app.route('/download_zip/<scenario>')
+def download_zip(scenario):
+    benign_filename = f"{scenario}_benign.pcap"
+    malicious_filename = f"{scenario}_malicious.pcap"
+
+    benign_path = os.path.join(app.config['TRAFFIC_DIR'], benign_filename)
+    malicious_path = os.path.join(app.config['TRAFFIC_DIR'], malicious_filename)
+
+    # Create an in-memory zip file
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w') as z:
+        if os.path.exists(benign_path):
+            z.write(benign_path, benign_filename)
+        if os.path.exists(malicious_path):
+            z.write(malicious_path, malicious_filename)
+    
+    zip_buffer.seek(0)
+
+    # Send the zip file as a download
+    return send_file(zip_buffer, as_attachment=True, download_name=f'{scenario}_pcap_files.zip', mimetype='application/zip')
+
+@app.route('/get_pcap_files/<scenario_id>')
+def get_pcap_files(scenario_id):
+    traffic_dir = app.config['TRAFFIC_DIR']
+    pcap_files = []
+    
+    for file in os.listdir(traffic_dir):
+        if file.startswith(scenario_id) and file.endswith('.pcap'):
+            pcap_files.append(file)
+    
+    return jsonify(pcap_files)
 
 def clean_signal_files(SIGNALS_DIR):
     for f in os.listdir(SIGNALS_DIR):

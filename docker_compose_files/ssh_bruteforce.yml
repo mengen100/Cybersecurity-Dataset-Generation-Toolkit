@@ -11,7 +11,7 @@ services:
       - ../signals:/signals
     command: >
       /bin/bash -c "
-      tcpdump -i any -w ../traffic/malicious_ssh_bruteforce.pcap & python3 /scripts/attacker/ssh_bruteforce.py;
+      tcpdump -i any -w ../traffic/ssh_bruteforce_malicious.pcap & python3 /scripts/attacker/ssh_bruteforce.py;
       touch /signals/attacker_done_$${SIMULATION_ID};
       tail -f /dev/null
       "
@@ -31,7 +31,7 @@ services:
       - ../signals:/signals
     command: >
       /bin/bash -c "
-      tcpdump -i any -w ../traffic/benign_ssh_normal_activity.pcap & python3 /scripts/user/ssh_normal_usage.py;
+      tcpdump -i any -w ../traffic/ssh_bruteforce_benign.pcap & python3 /scripts/user/ssh_normal_usage.py;
       touch /signals/user_done_$${SIMULATION_ID};
       tail -f /dev/null
       "
