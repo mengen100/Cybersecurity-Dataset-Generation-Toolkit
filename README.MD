@@ -11,9 +11,8 @@ The Cybersecurity Dataset Generation Toolkit (CDGT) is an extensible framework d
 - **Containerized Environment**: Utilize Docker for isolated and reproducible network simulations.
 - **Extensible Framework**: Easily add new attack vectors and network configurations.
 
-Tested on Ubuntu 22.04.4 LTS
 
-## Installation
+## Installation (Tested on Ubuntu 22.04.4 LTS)
 
 1. Clone the repository:
 ```
@@ -22,7 +21,7 @@ cd Cybersecurity-Dataset-Generation-Toolkit
 ```
 2. Set up the environment:
 ```
-sudo ./setuo.sh
+sudo ./setup.sh
 ```
 3. Start the CDGT web interface:
 ```
