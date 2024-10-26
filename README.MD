@@ -30,3 +30,6 @@ sudo flask run
 4. Access the web interface at `http://localhost:5000`.
 5. Select a scenario and start the simulation.
 6. Once the simulation is complete, download the generated PCAP files for analysis.
+
+## Demo
+![demo](https://github.com/user-attachments/assets/18914310-61ab-4e1d-84fa-e25037703949)
