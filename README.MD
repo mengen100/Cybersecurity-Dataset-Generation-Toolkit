@@ -32,4 +32,4 @@ sudo flask run
 6. Once the simulation is complete, download the generated PCAP files for analysis.
 
 ## Demo
-![demo (1)](https://github.com/user-attachments/assets/51147994-91ee-46e9-aaf0-6f04a1dd905d)
+![demo2](https://github.com/user-attachments/assets/b8994e45-b7b8-46d2-8a4a-8bacb1143b75)
